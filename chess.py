@@ -126,8 +126,6 @@ if __name__=="__main__":
     # Initialize game
     game = ChessGame()
 
-    # Run tests
-
     # Take steps until game is over
     while game.take_step():
         pass
