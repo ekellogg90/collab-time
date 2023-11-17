@@ -32,6 +32,8 @@ PIECE_POINTS = {
     "p": 1
 }
 
+COLUMN_NAMES = ["a", "b", "c", "d", "e", "f", "g", "h"]
+ROW_NAMES = ["8", "7", "6", "5", "4", "3", "2", "1"]
 
 class ChessGame:
 
@@ -39,14 +41,14 @@ class ChessGame:
         
         # State Variables
         self.game_board = [
-            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-            ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
-            ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "],
-            ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "],
-            ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "],
-            ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "],
-            ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
+            ["bR2", "bN2", "bB2", "bQ1", "bK1", "bB1", "bN1", "bR1"],
+            ["bp8", "bp7", "bp6", "bp5", "bp4", "bp3", "bp2", "bp1"],
+            ["   ", "   ", "   ", "   ", "   ", "   ", "   ", "   "],
+            ["   ", "   ", "   ", "   ", "   ", "   ", "   ", "   "],
+            ["   ", "   ", "   ", "   ", "   ", "   ", "   ", "   "],
+            ["   ", "   ", "   ", "   ", "   ", "   ", "   ", "   "],
+            ["wp1", "wp2", "wp3", "wp4", "wp5", "wp6", "wp7", "wp8"],
+            ["wR1", "wN1", "wB1", "wQ1", "wK1", "wB2", "wN2", "wR2"],
         ]
 
         self.last_move_result: str = "\n ###############  NEW GAME  ############### \n"
@@ -56,12 +58,13 @@ class ChessGame:
 
     def print_board_state(self):
         # Loop over each piece and print in a grid
-        print("===========================================")
+        print("=====================================================")
         for i, row in enumerate(self.game_board):
-            print("|| " + " | ".join(row) + " ||")
+            print(ROW_NAMES[i], "|| " + " | ".join(row) + " ||")
             if i != (GRID_SIZE-1):
-                print("-------------------------------------------")
-        print("===========================================")
+                print("-----------------------------------------------------")
+        print("=====================================================")
+        print("  || ", "  |  ".join(COLUMN_NAMES)," ||")
     
     def describe_game_state(self) -> None:
         print(self.last_move_result)
@@ -79,24 +82,56 @@ class ChessGame:
         # Print board state
         self.print_board_state()
 
-        # Promp for next move "White:", "Black:"
-        user_input = input("What should I print?")
+        # Prompt for next move "White:", "Black:"
+        move = input("White: " if self.white_turn else "Black: ")
         # Input should be chess notation
         # Game state only changes if the input move is legal
-        print(user_input)
+        print(move)
+        # Prompt user for next move
+        # Find where piece is on the board
+        # Move piece to new location
+        # Print updated game board
+
+        # Check that move is valid
+        # if self.is_legal_move():
+
+        
 
         # TODO Return true if game is still active
 
         return False
     
     @staticmethod
+    def get_location(move: str, piece: str, game_board, white_turn) -> list:
+        # create piece name
+        piece_name = ("w" if white_turn else "b") + piece
+        # search game board for piece location
+
+        # return location of piece
+
+        # Receive desired move from user
+    
+    @staticmethod
     def is_legal_move(move: str, piece: str, game_board) -> bool:
         # Return True if move is legal, given the piece, color, and game board state
+
         raise NotImplementedError
     
     @staticmethod
     def is_obstructed(game_board, start_pos, ending_pos) -> bool:
         # When given a board state, starting position, and ending position, return true if any pieces obstruct the path from start to end
+        raise NotImplementedError
+    
+    @staticmethod
+    def is_check(game_board, team: str) -> bool:
+        # Check if we put opponent in check or our move puts ourself in check
+        raise NotImplementedError
+    
+    @staticmethod
+    def pawn_promote(game_board, team: str) -> str:
+        # If white pawn reaches A8 - H8, ask White player which piece they want to replace pawn with
+        # If black pawn reaches A1 - H8, ask Black player which piece they want to replace pawn with
+        # Return decision or p for no promotion
         raise NotImplementedError
     
     @staticmethod
@@ -106,7 +141,7 @@ class ChessGame:
         for row in game_board:
             for piece in row:
                 # Split the string into parts
-                team, piece_type = piece
+                team, piece_type, piece_number = piece
                 if piece_type not in PIECE_POINTS:
                     continue
                 if team == "w":
