@@ -5,6 +5,7 @@ Simple CLI Chess Game
 * Accepts input in chess notation (i.e. Rg3)
 * If the move is illegal an informative message is printed
 """
+import pytest
 
 # Support variables
 GRID_SIZE = 8
@@ -45,7 +46,7 @@ class ChessGame:
             ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "],
             ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
+            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
         ]
 
         self.last_move_result: str = "\n ###############  NEW GAME  ############### \n"
@@ -106,6 +107,8 @@ class ChessGame:
             for piece in row:
                 # Split the string into parts
                 team, piece_type = piece
+                if piece_type not in PIECE_POINTS:
+                    continue
                 if team == "w":
                     score += PIECE_POINTS[piece_type]
                 else:
@@ -113,10 +116,17 @@ class ChessGame:
         return score
 
 
+def test_starting_score():
+    game = ChessGame()
+    assert ChessGame.get_white_score(game.game_board) == 0
+
+
 if __name__=="__main__":
 
     # Initialize game
     game = ChessGame()
+
+    # Run tests
 
     # Take steps until game is over
     while game.take_step():
