@@ -9,6 +9,7 @@ import pytest
 
 # Support variables
 GRID_SIZE = 8
+# TODO Update allowed moves to y, x form
 ALLOWED_MOVES = {
     "K": [(-1, 0), (1, 0), (0, -1), (0, 1)],
     "Q": [(0, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # vertical moves
@@ -78,49 +79,93 @@ class ChessGame:
 
         # Describe state of game in text (i.e. "Game Over, White Wins", "Black Checks White" etc)
         self.describe_game_state()
-
         # Print board state
         self.print_board_state()
-
-        # Prompt for next move "White:", "Black:"
-        move = input("White: " if self.white_turn else "Black: ")
-        # Input should be chess notation
+        # Prompt for next move
+        piece, target = self.get_user_input()
+        # Get indices of source location
+        source_position = self.get_indices_from_piece(piece, self.game_board)
+        print("source position: ", source_position)
+        # Get indices of target location
+        target_position = self.get_indices_from_location(target)
+        print("target position: ", target_position)
+        # Compute the move
+        move = (target_position[0]-source_position[0], target_position[1]-source_position[1])
+        print("move: ", move)
         # Game state only changes if the input move is legal
-        print(move)
-        # Prompt user for next move
-        # Find where piece is on the board
-        # Move piece to new location
-        # Print updated game board
-
-        # Check that move is valid
-        # if self.is_legal_move():
-
-        
+        self.execute_move(source_position, target_position)
+        # Update game flow
+        self.white_turn = not self.white_turn
+        self.last_move_result = "\n" + "last move: " + piece + target + "\n"
 
         # TODO Return true if game is still active
 
-        return False
+        return True
+    
+    def get_user_input(self) -> tuple:
+        # Prompt user to input directions (i.e. wp4 d4)
+        print("White: " if self.white_turn else "Black: ")
+        # Prompt user for piece & piece number and target location
+        user_input = input("give piece and target location (i.e. wp4 d4): ")
+        # TODO Perform checks to make sure input is valid, handle if not
+        # TODO Add w or b if not present, or throw error until it's added by user
+        return user_input.split(" ")
+    
+    def execute_move(self, source_position, target_position) -> None:
+        src_y, src_x = source_position
+        tar_y, tar_x = target_position
+        # Move piece to new spot
+        self.game_board[tar_y][tar_x] = self.game_board[src_y][src_x]
+        # Replace original spot with empty cell
+        self.game_board[src_y][src_x] = "   "
+        return
     
     @staticmethod
-    def get_location(move: str, piece: str, game_board, white_turn) -> list:
-        # create piece name
-        piece_name = ("w" if white_turn else "b") + piece
+    def get_indices_from_location(location: str) -> tuple:
+        # Accepts a-h + 1-8
+        x_loc_, y_loc_ = location
+        for y, y_loc in enumerate(ROW_NAMES):
+            for x, x_loc in enumerate(COLUMN_NAMES):
+                if x_loc==x_loc_ and y_loc==y_loc_:
+                    return y, x
+        return (None, None)
+    
+    @staticmethod
+    def get_indices_from_piece(piece: str, game_board) -> tuple:
         # search game board for piece location
-
-        # return location of piece
+        for y, row in enumerate(game_board):
+            for x, cell_contents in enumerate(row):
+                if cell_contents == piece:
+                    return y, x
+        return (None, None)
 
         # Receive desired move from user
+    def list_possible_moves(self, game_board, white_turn) -> list:
+        # Given the team and gameboard, list all possible moves
+        #     How to do this?
+        #     Loop over the gameboard and look for pieces of the active team
+        #     For each white piece, test each allowed move
+        #     If the allowed move is legal, keep it in the list
+        team = "w" if white_turn else "b"
+        for y, row in enumerate(game_board):
+            for x, piece in enumerate(row):
+                if team in piece:
+                    team, piece_type, piece_number = piece
+                    # TODO Test each allowed-move
+
+                    
+
+        pass
     
     @staticmethod
-    def is_legal_move(move: str, piece: str, game_board) -> bool:
+    def is_legal_move(move, piece: str, game_board) -> bool:
         # Return True if move is legal, given the piece, color, and game board state
-
-        raise NotImplementedError
+        return True
     
     @staticmethod
     def is_obstructed(game_board, start_pos, ending_pos) -> bool:
         # When given a board state, starting position, and ending position, return true if any pieces obstruct the path from start to end
-        raise NotImplementedError
+        return False
     
     @staticmethod
     def is_check(game_board, team: str) -> bool:
