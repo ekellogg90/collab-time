@@ -12,16 +12,16 @@ GRID_SIZE = 8
 # TODO Update allowed moves to y, x form
 ALLOWED_MOVES = {
     "K": [(-1, 0), (1, 0), (0, -1), (0, 1)],
-    "Q": [(0, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # vertical moves
-         [(i, 0) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # horizontal moves
+    "Q": [(0, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # horizontal moves
+         [(i, 0) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # vertical moves
          [(i, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # diagonal moves part 1
          [(-i, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0], # diagonal moves part 2
-    "R": [(0, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # vertical moves
-         [(i, 0) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0], # horizontal moves
+    "R": [(0, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # horizontal moves
+         [(i, 0) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0],  # vertical moves
     "B": [(i, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0] + # diagonal moves part 1
          [(-i, i) for i in range(-(GRID_SIZE+1), GRID_SIZE) if i!=0], # diagonal moves part 2
     "N": [(-2, 1), (2, 1), (1, -2), (1, 2), (2, -1), (-2, -1), (-1, 2), (-1, -2)],
-    "p": [(0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1)]
+    "p": [(1, 0), (-1, 0), (1, 1), (-1, 1), (1, -1), (-1, -1), (-2, 0), (2, 0)]
 }
 
 PIECE_POINTS = {
@@ -38,7 +38,7 @@ ROW_NAMES = ["8", "7", "6", "5", "4", "3", "2", "1"]
 
 class ChessGame:
 
-    def __init__(self) -> None:
+    def __init__(self, one_player_game, verbose=False) -> None:
         
         # State Variables
         self.game_board = [
@@ -54,7 +54,9 @@ class ChessGame:
 
         self.last_move_result: str = "\n ###############  NEW GAME  ############### \n"
         self.white_turn: bool = True
+        self.one_player_game: bool = one_player_game
         self.game_is_active: bool = True
+        self.verbose = verbose
         return
 
     def print_board_state(self):
@@ -75,53 +77,98 @@ class ChessGame:
         """
         This method is called to allow the user to see the game state and input moves
         Return True if game is still active
+        *** STUDENT: No need to change anything in this function ***
         """
-
         # Describe state of game in text (i.e. "Game Over, White Wins", "Black Checks White" etc)
         self.describe_game_state()
         # Print board state
         self.print_board_state()
         # Prompt for next move
-        piece, target = self.get_user_input()
+        while True:
+            # Loop forever until get_user_input succeeds
+            if self.one_player_game and not self.white_turn:
+                piece, target = self.get_ai_input()
+            else:
+                try:
+                    piece, target = self.get_user_input()
+                except AssertionError as e:
+                    # Print helpful instructions when hitting assertion errors when validating user input
+                    print(e)
+                    continue
+            break
         # Get indices of source location
-        source_position = self.get_indices_from_piece(piece, self.game_board)
-        print("source position: ", source_position)
+        source_position = self.get_indices_from_piece(piece, self.game_board, verbose=self.verbose)
+        if self.verbose:
+            print("source position: ", source_position)
         # Get indices of target location
-        target_position = self.get_indices_from_location(target)
-        print("target position: ", target_position)
-        # Compute the move
-        move = (target_position[0]-source_position[0], target_position[1]-source_position[1])
-        print("move: ", move)
+        target_position = self.get_indices_from_location(target, verbose=self.verbose)
+        if self.verbose:
+            print("target position: ", target_position)
         # Game state only changes if the input move is legal
-        self.execute_move(source_position, target_position)
-        # Update game flow
-        self.white_turn = not self.white_turn
-        self.last_move_result = "\n" + "last move: " + piece + target + "\n"
+        if self.is_legal_move(piece=piece, source_position=source_position, target_position=target_position, 
+                              game_board=self.game_board, white_turn=self.white_turn, verbose=self.verbose):
+            self.execute_move(source_position, target_position, verbose=self.verbose)
+            # Update last move result
+            self.last_move_result = "\n" + "last move: " + piece[1] + target + "\n"
+        else:
+            print("illegal move, try again...")
 
-        # TODO Return true if game is still active
-
-        return True
+        return self.game_is_active
+    
+    def get_ai_input(self) -> tuple:
+        # Placeholder for AI bots
+        raise NotImplementedError("Need to implement AI module")
     
     def get_user_input(self) -> tuple:
         # Prompt user to input directions (i.e. wp4 d4)
         print("White: " if self.white_turn else "Black: ")
         # Prompt user for piece & piece number and target location
-        user_input = input("give piece and target location (i.e. wp4 d4): ")
-        # TODO Perform checks to make sure input is valid, handle if not
-        # TODO Add w or b if not present, or throw error until it's added by user
-        return user_input.split(" ")
+        user_input_raw = input("give piece and target location (i.e. wp4 d4): ")
+        user_input = user_input_raw  # Strings are immutable, don't need to create a copy of the object to maintain the original in the raw variable
+        # Perform checks to make sure input is valid, handle if not
+        assert " " in user_input, "Must provide piece and target location (i.e. wp4 d4)"
+        # Add w or b if not present, or throw error until it's added by user
+        if "w" not in user_input and "b" not in user_input:
+            user_input = ("w" if self.white_turn else "b") + user_input.strip(" ")
+        piece, target = user_input.split(" ") # Create two strings, split by a denominator
+        assert (len(piece) == 3) and (len(target) == 2), f"Incorrect user input, expected (team)(piece type)(piece index) i.e. 'wQ1 d5'; Received {user_input_raw}"
+        return piece, target
     
-    def execute_move(self, source_position, target_position) -> None:
+    @staticmethod
+    def is_legal_move(piece: str, source_position, target_position, game_board, white_turn, verbose) -> bool:
+        # Return True if move is legal, given the piece, color, and game board state
+        # Calculate move
+        move = (target_position[0]-source_position[0], target_position[1]-source_position[1])
+        if verbose:
+            print("move: ", move)
+        # Get piece type from piece string (bp1)
+        _, piece_type, _ = piece
+        move_is_legal = True
+        # Check if move is in the allowed-moves for the piece
+        if move_is_legal:
+            move_is_legal = move in ALLOWED_MOVES[piece_type]
+        # If not the knight, check that path is not obstructed
+        if piece_type != "N" and move_is_legal:
+            move_is_legal = not ChessGame.is_obstructed(source_position=source_position, target_position=target_position, game_board=game_board)
+        # If pawn and move 2 spaces, ensure pawn was in starting location
+        # If pawn, check that pawn is moving in the correct direction given the turn
+        # If king is in check, does move uncheck? Can any moves uncheck? If not, end of game
+        return move_is_legal
+    
+    def execute_move(self, source_position, target_position, verbose):
+        # TODO Make a copy of ChessGame and return the copy
         src_y, src_x = source_position
         tar_y, tar_x = target_position
         # Move piece to new spot
         self.game_board[tar_y][tar_x] = self.game_board[src_y][src_x]
         # Replace original spot with empty cell
         self.game_board[src_y][src_x] = "   "
+        # Alternate the turn
+        self.white_turn = not self.white_turn
         return
     
     @staticmethod
-    def get_indices_from_location(location: str) -> tuple:
+    def get_indices_from_location(location: str, verbose) -> tuple:
         # Accepts a-h + 1-8
         x_loc_, y_loc_ = location
         for y, y_loc in enumerate(ROW_NAMES):
@@ -131,7 +178,7 @@ class ChessGame:
         return (None, None)
     
     @staticmethod
-    def get_indices_from_piece(piece: str, game_board) -> tuple:
+    def get_indices_from_piece(piece: str, game_board, verbose) -> tuple:
         # search game board for piece location
         for y, row in enumerate(game_board):
             for x, cell_contents in enumerate(row):
@@ -152,19 +199,14 @@ class ChessGame:
                 if team in piece:
                     team, piece_type, piece_number = piece
                     # TODO Test each allowed-move
-
-                    
-
         pass
     
     @staticmethod
-    def is_legal_move(move, piece: str, game_board) -> bool:
-        # Return True if move is legal, given the piece, color, and game board state
-        return True
-    
-    @staticmethod
-    def is_obstructed(game_board, start_pos, ending_pos) -> bool:
+    def is_obstructed(source_position, target_position, game_board) -> bool:
         # When given a board state, starting position, and ending position, return true if any pieces obstruct the path from start to end
+        # Compute rise over run, number of steps, check each
+        # slope = (target_position[0]-source_position[0]) /
+        # TODO Start here
         return False
     
     @staticmethod
@@ -203,8 +245,8 @@ def test_starting_score():
 
 if __name__=="__main__":
 
-    # Initialize game
-    game = ChessGame()
+    # Initialize game, use verbose to debug
+    game = ChessGame(verbose=True, one_player_game=False)
 
     # Take steps until game is over
     while game.take_step():
